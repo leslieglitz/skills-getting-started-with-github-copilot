@@ -20,9 +20,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
-        // Create participants list with delete buttons
+        // Create participants list with delete buttons (escape user-provided values to avoid XSS)
+        const escapeHtml = (value) =>
+          String(value).replace(/[&<>"']/g, (c) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          }[c]));
+
         const participantsList = details.participants
-          .map(email => `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}" title="Remove participant">×</button></li>`)
+          .map((email) => {
+            const safeEmail = escapeHtml(email);
+            const safeActivity = escapeHtml(name);
+            return `<li><span class="participant-email">${safeEmail}</span><button class="delete-btn" data-activity="${safeActivity}" data-email="${safeEmail}" aria-label="Remove participant ${safeEmail} from ${safeActivity}" title="Remove participant">×</button></li>`;
+          })
           .join("");
 
         activityCard.innerHTML = `
