@@ -68,7 +68,8 @@ def test_signup_with_different_email_formats(client):
     
     for email in test_emails:
         response = client.post(
-            f"/activities/Programming%20Class/signup?email={email}"
+            "/activities/Programming%20Class/signup",
+            params={"email": email},
         )
         # Should succeed or fail gracefully if already exists
         assert response.status_code in [200, 400]
