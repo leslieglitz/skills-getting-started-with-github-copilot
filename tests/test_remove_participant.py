@@ -6,45 +6,45 @@ from urllib.parse import quote
 
 def test_successful_participant_removal(client):
     """Test successfully removing a participant from an activity."""
-    # First, verify the participant exists
-    activities_before = client.get("/activities").json()
-    initial_participants = activities_before["Chess Club"]["participants"].copy()
-    
-    if initial_participants:
-        email_to_remove = initial_participants[0]
-        
-        # Remove the participant
-        response = client.delete(
-            f"/activities/Chess%20Club/participants/{email_to_remove}"
-        )
-        
-        assert response.status_code == 200
-        data = response.json()
-        assert "Removed" in data["message"]
-        assert email_to_remove in data["message"]
+    email_to_remove = "remove.me@mergington.edu"
+    signup_response = client.post(
+        f"/activities/Chess%20Club/signup?email={quote(email_to_remove)}"
+    )
+    assert signup_response.status_code in [200, 400]
+
+    response = client.delete(
+        f"/activities/Chess%20Club/participants/{quote(email_to_remove)}"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "Removed" in data["message"]
+    assert email_to_remove in data["message"]
 
 
 def test_removal_updates_activity_list(client):
     """Test that removing a participant updates the activity participant list."""
-    # Get initial state
+    email_to_remove = "count.check@mergington.edu"
+    signup_response = client.post(
+        f"/activities/Programming%20Class/signup?email={quote(email_to_remove)}"
+    )
+    assert signup_response.status_code in [200, 400]
+
     activities_before = client.get("/activities").json()
     initial_participants = activities_before["Programming Class"]["participants"].copy()
     initial_count = len(initial_participants)
-    
-    if initial_participants:
-        email_to_remove = initial_participants[0]
-        
-        # Remove the participant
-        client.delete(
-            f"/activities/Programming%20Class/participants/{email_to_remove}"
-        )
-        
-        # Verify participant was removed
-        activities_after = client.get("/activities").json()
-        final_participants = activities_after["Programming Class"]["participants"]
-        
-        assert email_to_remove not in final_participants
-        assert len(final_participants) == initial_count - 1
+
+    assert email_to_remove in initial_participants
+
+    client.delete(
+        f"/activities/Programming%20Class/participants/{quote(email_to_remove)}"
+    )
+
+    activities_after = client.get("/activities").json()
+    final_participants = activities_after["Programming Class"]["participants"]
+
+    assert email_to_remove not in final_participants
+    assert len(final_participants) == initial_count - 1
 
 
 def test_remove_nonexistent_participant(client):
@@ -71,19 +71,17 @@ def test_remove_from_nonexistent_activity(client):
 
 def test_remove_participant_with_special_characters_in_email(client):
     """Test removing a participant with special characters in email (URL encoded)."""
-    # First, sign up a participant with a special character email
     email = "student+special@mergington.edu"
     signup_response = client.post(
         f"/activities/Gym%20Class/signup?email={quote(email)}"
     )
-    
-    if signup_response.status_code == 200:
-        # Now try to remove them using proper URL encoding
-        response = client.delete(
-            f"/activities/Gym%20Class/participants/{quote(email)}"
-        )
-        
-        assert response.status_code == 200
+    assert signup_response.status_code in [200, 400]
+
+    response = client.delete(
+        f"/activities/Gym%20Class/participants/{quote(email)}"
+    )
+
+    assert response.status_code == 200
 
 
 def test_integration_signup_then_remove(client):
