@@ -1,15 +1,18 @@
 """Shared pytest fixtures for FastAPI tests."""
 
+import copy
+
 import pytest
 from fastapi.testclient import TestClient
-from src.app import app
+
+import src.app as app_module
 
 
 @pytest.fixture
-def client():
+def client(sample_activities):
     """Provide a TestClient instance for testing the FastAPI app."""
-    return TestClient(app)
-
+    app_module.activities = copy.deepcopy(sample_activities)
+    return TestClient(app_module.app)
 
 @pytest.fixture
 def sample_activities():
